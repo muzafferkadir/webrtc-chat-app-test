@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -10,10 +11,10 @@ const io = socketIo(server);
 
 app.use(express.static(path.join(__dirname)));
 
-// PeerJS sunucusunu ekleyin
 const peerServer = ExpressPeerServer(server, {
   debug: true,
-  path: '/myapp'
+  path: '/myapp',
+  allow_discovery: true
 });
 
 app.use('/peerjs', peerServer);
@@ -265,15 +266,20 @@ const html = `
                 localStream = destination.stream;
 
                 peer = new Peer(socket.id, {
-                    host: '/',
-                    port: '3000',
-                    path: '/peerjs/myapp'
+                    host: '${process.env.BROADCAST_HOST}',
+                    port: '${process.env.BROADCAST_PORT}',
+                    path: '/peerjs/myapp',
+                    secure: true,
                 });
 
                 peer.on('open', (id) => {
                     console.log('My peer ID is: ' + id);
                     socket.emit('joinVoiceChat', currentGroup.id);
                     inVoiceChat = true;
+                });
+
+                peer.on('error', (err) => {
+                    console.error('Peer bağlantı hatası:', err);
                 });
 
                 peer.on('call', (call) => {
@@ -355,15 +361,20 @@ const html = `
                 document.getElementById('localVideo').srcObject = videoStream;
 
                 peer = new Peer(socket.id, {
-                    host: '/',
-                    port: '3000',
-                    path: '/peerjs/myapp'
+                    host: '${process.env.BROADCAST_HOST}',
+                    port: '${process.env.BROADCAST_PORT}',
+                    path: '/peerjs/myapp',
+                    secure: true,
                 });
 
                 peer.on('open', (id) => {
                     console.log('My peer ID is: ' + id);
                     socket.emit('joinVoiceChat', currentGroup.id);
                     inVoiceChat = true;
+                });
+
+                peer.on('error', (err) => {
+                    console.error('Peer bağlantı hatası:', err);
                 });
 
                 peer.on('call', (call) => {
@@ -437,5 +448,6 @@ app.get('/', (req, res) => {
 });
 
 // Sunucuyu başlat
-const PORT = process.env.PORT || 5001;
-server.listen(PORT, '0.0.0.0', () => console.log(`Server running on 0.0.0.0:${PORT}`));
+const PORT = process.env.APP_PORT;
+const HOST = process.env.APP_HOST;
+server.listen(PORT, HOST, () => console.log(`Server running on https://${HOST}:${PORT}`));
